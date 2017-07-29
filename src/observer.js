@@ -11,13 +11,13 @@ const handlers = ({
     START_RAFFLE: () => {
       console.log(startMsg)
     },
-    START: (position) => {
+    START: () => {
       data = {}
-      task = ora(logger(data, position)).start()
+      task = ora(logger(data)).start()
     },
-    SET: (position, newData) => {
+    SET: (newData) => {
       data = {...data, ...newData}
-      task.text = logger(data, position)
+      task.text = logger(data)
     },
     END: (position) => {
       task.succeed()
@@ -29,5 +29,5 @@ const handlers = ({
 
 export default (options) => {
   const configuredHandlers = handlers(options)
-  return (item) => configuredHandlers[item.type](item.position, item.data)
+  return (item) => configuredHandlers[item.type](item.data)
 }

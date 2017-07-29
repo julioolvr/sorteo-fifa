@@ -1,18 +1,32 @@
 import shuffle from 'array-shuffle'
+import { Observable } from 'rx'
+import observer from './src/observer'
 import { zip } from './src/lib'
-import raffle from './src/raffle'
 import players from './data/players'
 import teams from './data/teams'
 
 const PLAYER_INTERVAL = 3000
 const TEAM_INTERVAL = 2000
 
-raffle({
-  shuffler: () => zip(shuffle(players), shuffle(teams)),
-  announcer: ([player, team]) => [
-    {data: { team }, interval: TEAM_INTERVAL},
-    {data: { player }, interval: PLAYER_INTERVAL}
-  ],
-  logger: ({team = 'Buscando Equipo...', player = 'Buscando DT...'}) =>
-  `⚽️  ${team} 🙋‍♂️  ${player}`
-})
+function logger({ team = 'Buscando Equipo...', player = 'Buscando DT...' }) {
+  return `⚽️  ${team} 🙋‍♂️  ${player}`
+}
+
+const results = zip(shuffle(players), shuffle(teams))
+
+const players$ = Observable
+  .from(results)
+  .concatMap(([player, team]) => {
+    return Observable
+      .of({ type: "START" }, { type: "SET" })
+      .concat(
+        Observable.of({ type: "SET", data: { team } }).delay(TEAM_INTERVAL),
+        Observable.of({ type: "SET", data: { player } }).delay(PLAYER_INTERVAL),
+        Observable.of({ type: "END" })
+      )
+  })
+
+Observable.of({ type: 'START_RAFFLE' })
+  .concat(players$)
+  .concat(Observable.of({ type: 'END_RAFFLE' }))
+  .subscribe(observer({ logger }))
